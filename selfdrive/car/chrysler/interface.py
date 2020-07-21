@@ -82,9 +82,12 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
 
     # allow 2019 cars to steer down to 14.5 m/s if already engaged.
-    if ret.cruiseState.enabled and ret.vEgo > HIGH_MIN_2019:
-      self.CP.minSteerSpeed = LOW_MIN_2019
-    if ret.vEgo < LOW_MIN_2019:
+    if ret.cruiseState.enabled: 
+      if ret.vEgo > HIGH_MIN_2019:
+        self.CP.minSteerSpeed = LOW_MIN_2019
+      elif ret.vEgo < LOW_MIN_2019:
+        self.CP.minSteerSpeed = HIGH_MIN_2019
+    else: 
       self.CP.minSteerSpeed = HIGH_MIN_2019
 
     if ret.vEgo < self.CP.minSteerSpeed:
