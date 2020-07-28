@@ -4,6 +4,9 @@ from selfdrive.car.chrysler.values import Ecu, ECU_FINGERPRINT, CAR, FINGERPRINT
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
+# Logic in update() relies on these values being different.
+HIGH_MIN_2019 = 17.5  # m/s minimum for steering engage on 2019.
+LOW_MIN_2019 = 14.5  # m/s minimum after already engaged on 2019. 14.5m/s=33mph
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
@@ -75,6 +78,17 @@ class CarInterface(CarInterfaceBase):
     # events
     events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low],
                                        gas_resume_speed=2.)
+
+    # Allow 2019 cars to steer down to 14.5 m/s if already engaged.
+    # minSteerSpeed must set to HIGH_MIN_2019 if driver cancels OP between HIGH_MIN_2019 and LOW_MIN_2019. 
+    # Also, it must reset to HIGH everytime OP is cancelled.
+    if ret.cruiseState.enabled: 
+      if ret.vEgo > HIGH_MIN_2019:
+        self.CP.minSteerSpeed = LOW_MIN_2019
+      elif ret.vEgo < LOW_MIN_2019:
+        self.CP.minSteerSpeed = HIGH_MIN_2019
+    else: 
+      self.CP.minSteerSpeed = HIGH_MIN_2019
 
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
