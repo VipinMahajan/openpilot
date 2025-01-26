@@ -7,6 +7,9 @@ from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 
+# Logic in update function relies on these values being different.
+HIGH_MIN_2019 = 17.5  # m/s minimum for steering engage on 2019.
+LOW_MIN_2019 = 14.5  # m/s minimum after already engaged on 2019. 14.5m/s=33mph
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
@@ -83,6 +86,19 @@ class CarInterface(CarInterfaceBase):
 
     # events
     events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low])
+    
+    # allow 2019 cars to steer down to 14.5 m/s if already engaged.
+    if ret.cruiseState.enabled:
+      # When cruise control is enabled and if the current vehicle speed is above 39mph
+      if ret.vEgo > HIGH_MIN_2019:
+        # Set the min steering speed where stearing can stay engaged to 33mph
+        self.CP.minSteerSpeed = LOW_MIN_2019
+      elif ret.vEgo < LOW_MIN_2019:
+        # In cruise engaged state if the speed falls below 33 mph, reset the min stree speed to 39mph
+        self.CP.minSteerSpeed = HIGH_MIN_2019
+    else: 
+      # If cruise is disengaged, set the min stree speed to 39mph
+      self.CP.minSteerSpeed = HIGH_MIN_2019
 
     # Low speed steer alert hysteresis logic
     if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 0.5):
