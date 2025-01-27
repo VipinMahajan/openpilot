@@ -92,13 +92,13 @@ class CarInterface(CarInterfaceBase):
       # When cruise control is enabled and if the current vehicle speed is above 39mph
       if ret.vEgo > HIGH_MIN_2019:
         # Set the min steering speed where stearing can stay engaged to 33mph
-        self.CP.minSteerSpeed = LOW_MIN_2019
+        ret.minSteerSpeed = LOW_MIN_2019
       elif ret.vEgo < LOW_MIN_2019:
         # In cruise engaged state if the speed falls below 33 mph, reset the min stree speed to 39mph
-        self.CP.minSteerSpeed = HIGH_MIN_2019
+        ret.minSteerSpeed = HIGH_MIN_2019
     else: 
       # If cruise is disengaged, set the min stree speed to 39mph
-      self.CP.minSteerSpeed = HIGH_MIN_2019
+      ret.minSteerSpeed = HIGH_MIN_2019
 
     # Low speed steer alert hysteresis logic
     if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 0.5):
